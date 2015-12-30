@@ -143,6 +143,20 @@ func NewInOut(input, output string) *InOut {
 	return &InOut{In: input, Out: output}
 }
 
+func CreateDir(folder string) string {
+	path, err := os.Getwd()
+	if err != nil {
+		panic("Error to locate pwd")
+	}
+	dir := path + "/" + folder
+	fmt.Println(dir)
+	err = os.MkdirAll(dir, 0777)
+	if err != nil {
+		panic("MkdirAll error")
+	}
+	return dir + "/"
+}
+
 func (inout *InOut) Open() error {
 	var err error
 	if inout.In == "" {
@@ -155,11 +169,11 @@ func (inout *InOut) Open() error {
 		inout.Reader = bufio.NewReader(inout.in)
 	}
 	if inout.Out == "" {
-		os.MkdirAll("DefaulFolderConformation", 777)
+		//os.MkdirAll("DefaulFolderConformation", 777)
 	} else {
-		if false != IsDir(inout.Out) {
-			os.MkdirAll(inout.Out, 777)
-		}
+		// if false != IsDir(inout.Out) {
+		// 	os.MkdirAll(inout.Out, 777)
+		// }
 	}
 	return nil
 }

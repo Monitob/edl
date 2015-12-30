@@ -5,9 +5,11 @@ import (
 	"container/list"
 	"fmt"
 	"github.com/codegangsta/cli"
+	"io"
 	_ "io/ioutil"
 	"math"
 	"os"
+	"os/exec"
 	p "path"
 	"path/filepath"
 	"regexp"
@@ -140,6 +142,35 @@ func CheckFlags(edl, dir, root string) bool {
 	return true
 }
 
+func CopyFiles(src, dest string) error {
+	// cpCmd := exec.Command("/usr/bin/cp", "-rf ", src, dest)
+	// _ = cpCmd.Run()
+	sourcefile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+
+	defer sourcefile.Close()
+
+	destfile, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+
+	defer destfile.Close()
+
+	_, err = io.Copy(destfile, sourcefile)
+	if err == nil {
+		sourceinfo, err := os.Stat(src)
+		if err != nil {
+			err = os.Chmod(dest, sourceinfo.Mode())
+		}
+
+	}
+
+	return nil
+}
+
 func CmdConf(c *cli.Context) {
 
 	in := c.String("e")
@@ -164,6 +195,7 @@ func CmdConf(c *cli.Context) {
 	F, G := GetInputOutput(in, out, isEDLFile, ".conf")
 	fmt.Printf("test: %v\n", F)
 	fmt.Printf("test: %v\n\n", G)
+	desteny := CreateDir(out)
 
 	_ = InOut.Open()
 	defer InOut.in.Close()
@@ -194,6 +226,7 @@ func CmdConf(c *cli.Context) {
 
 	OrgPath := RootFiles
 	Recurse := true
+
 	walkFn := func(path string, info os.FileInfo, err error) error {
 		stat, err := os.Stat(path)
 		if err != nil {
@@ -211,9 +244,6 @@ func CmdConf(c *cli.Context) {
 				if e.Value.(*FilesInfo).Name == name && fr >= e.Value.(*FilesInfo).InitFrame && fr <= e.Value.(*FilesInfo).EndFrame {
 					return true
 				}
-				// fmt.Println(e.Value.(*FilesInfo).Name)
-				// fmt.Println(e.Value.(*FilesInfo).InitFrame)
-				// fmt.Println(e.Value.(*FilesInfo).EndFrame)
 			}
 			return false
 		}
@@ -230,14 +260,28 @@ func CmdConf(c *cli.Context) {
 			// fmt.Println(path)
 			// fmt.Println(p.Base(path))
 			name, frames := SplitRawFile(p.Base(path))
-			fmt.Println(IsInList(FileList, name, frames), p.Base(path))
+			if IsInList(FileList, name, frames) == true {
+				//fmt.Println(IsInList(FileList, name, frames), path, desteny)
+				//CopyFiles(path, desteny)
+				cpCmd := exec.Command("cp", path, desteny)
+				err = cpCmd.Start()
+				err = cpCmd.Wait()
+				fmt.Printf("Command finished with error: %v\n", err)
+			}
 		}
 		return nil
 	}
+	cmd := exec.Command("sleep", "5")
+	err := cmd.Start()
+	if err != nil {
+	}
+	fmt.Printf("Waiting for command to finish...")
+	err = cmd.Wait()
+	fmt.Printf("Command finished with error: %v", err)
+	defer InOut.in.Close()
 
-	err := filepath.Walk(OrgPath, walkFn)
+	err = filepath.Walk(OrgPath, walkFn)
 	if err != nil {
 		return
 	}
-
 }
