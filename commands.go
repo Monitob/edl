@@ -13,13 +13,20 @@ var GlobalFlags = []cli.Flag{}
 var Commands = []cli.Command{
 	{
 		Name:   "conf",
-		Usage:  "<name>.edl --folder name",
+		Usage:  "edl conf --file-edl <file> --dir <Dir> --project-name<Folder>",
 		Action: command.CmdConf,
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "folder",
-				Value: "Conformation",
-				Usage: "Name of the folder to edl result",
+				Name:  "e, file-edl",
+				Usage: "Specify a file edl",
+			},
+			cli.StringFlag{
+				Name:  "d, dir",
+				Usage: "Specify a directory to search(default: root )",
+			},
+			cli.StringFlag{
+				Name:  "p, project-name",
+				Usage: "Specify an alternate project name(default: conformation)",
 			},
 		},
 	},

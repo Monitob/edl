@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -58,6 +59,38 @@ func GetDirFilenames(path string, isValid ValidFilenameFunc) []string {
 		}
 	}
 	return filenames
+}
+
+func GetDirRawFilenames(path string) []string {
+	F, _ := ioutil.ReadDir(path)
+	filenames := make([]string, 0, len(F))
+	for _, f := range F {
+		if f.Mode().IsRegular() {
+			filenames = append(filenames, f.Name())
+		}
+	}
+	return filenames
+}
+
+func IsResolutionDir(str string) bool {
+	fileRegexp := regexp.MustCompile("[[:digit:]]{4}x[[:digit:]]{4}")
+	return fileRegexp.MatchString(str)
+}
+
+func GetDirSubDir(path string) []string {
+	F, _ := ioutil.ReadDir(path)
+	subdirs, _ := make([]string, 0, len(F)), make([]string, 0, len(F))
+
+	IsResolutionDir := func(str string) bool {
+		fileRegexp := regexp.MustCompile("[[:digit:]]{4}x[[:digit:]]{4}")
+		return fileRegexp.MatchString(str)
+	}
+	for _, f := range F {
+		if f.IsDir() && IsResolutionDir(f.Name()) {
+			subdirs = append(subdirs, f.Name())
+		}
+	}
+	return subdirs
 }
 
 func GetCurDirFilenames(isValid ValidFilenameFunc) []string {
