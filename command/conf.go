@@ -363,5 +363,8 @@ func CmdConf(c *cli.Context) {
 			return
 		}
 	}
-	wg.Wait()
+	go func() {
+		wg.Wait()
+	}()
+
 }
