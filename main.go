@@ -11,7 +11,7 @@ func main() {
 	app.Name = Name
 	app.Version = Version
 	app.Author = "Monitob"
-	app.Email = ""
+	app.Email = "jaime2988bernabe@gmail.com"
 	app.Usage = ""
 
 	app.Flags = GlobalFlags

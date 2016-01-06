@@ -30,6 +30,21 @@ var Commands = []cli.Command{
 			},
 		},
 	},
+	{
+		Name:   "verif",
+		Usage:  "edl verif --file-edl <file> --dir <Directory>",
+		Action: command.CmdConf,
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "e, file-edl",
+					Usage: "Specify a file edl",
+			},
+			cli.StringFlag{
+				Name:  "d, dir",
+				Usage: "Specify a directory to search(default: root )",
+			},
+		},
+	},
 }
 
 func CommandNotFound(c *cli.Context, command string) {

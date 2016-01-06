@@ -10,7 +10,7 @@ import (
 	_ "io/ioutil"
 	"math"
 	"os"
-	//"os/exec"
+	"os/exec"
 	p "path"
 	"path/filepath"
 	"regexp"
@@ -77,33 +77,42 @@ func copyFileContents(src, dst string) (err error) {
 // the same, then return success. Otherise, attempt to create a hard link
 // between the two files. If that fail, copy the file contents from src to dst.
 func CopyFile(src, dst string) (err error) {
-	sfi, err := os.Stat(src)
-	if err != nil {
-		return
-	}
-	if !sfi.Mode().IsRegular() {
-		// cannot copy non-regular files (e.g., directories,
-		// symlinks, devices, etc.)
-		return fmt.Errorf("CopyFile: non-regular source file %s (%q)", sfi.Name(), sfi.Mode().String())
-	}
-	dfi, err := os.Stat(dst)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return
+		cpCmd := exec.Command("cp", src, dst)
+		err = cpCmd.Start()
+		if err != nil {
+			fmt.Printf("Command finished with error: %v\n", err)
+			return err
 		}
-	} else {
-		if !(dfi.Mode().IsRegular()) {
-			return fmt.Errorf("CopyFile: non-regular destination file %s (%q)", dfi.Name(), dfi.Mode().String())
+		err = cpCmd.Wait()
+		if err != nil {
+			fmt.Printf("Command finished with error: %v\n", err)
+			return err
 		}
-		if os.SameFile(sfi, dfi) {
-			return
-		}
-	}
-	if err = os.Link(src, dst); err == nil {
-		return
-	}
-	err = copyFileContents(src, dst)
-	return
+	//sfi, err := os.Stat(src)
+	// if err != nil {
+	// 	return
+	// }
+	// if !sfi.Mode().IsRegular() {
+	// 	// cannot copy non-regular files (e.g., directories,
+	// 	// symlinks, devices, etc.)
+	// 	return fmt.Errorf("CopyFile: non-regular source file %s (%q)", sfi.Name(), sfi.Mode().String())
+	// }
+	// dfi, err := os.Stat(dst)
+	// if err != nil {
+	// 	if !os.IsNotExist(err) {
+	// 		return
+	// 	}
+	// } else {
+	// 	if !(dfi.Mode().IsRegular()) {
+	// 		return fmt.Errorf("CopyFile: non-regular destination file %s (%q)", dfi.Name(), dfi.Mode().String())
+	// 	}
+	// 	if os.SameFile(sfi, dfi) {
+	// 		return
+	// 	}
+	// }
+
+	// err = copyFileContents(src, dst)
+	return nil
 }
 
 var RegExpEntry = regexp.MustCompile(`^\s*([0-9]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S*)\s*` +
@@ -209,34 +218,6 @@ func CheckFlags(edl, dir, root string) bool {
 	return true
 }
 
-func CopyFiles(src, dest string) error {
-	// cpCmd := exec.Command("/usr/bin/cp", "-rf ", src, dest)
-	// _ = cpCmd.Run()
-	sourcefile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-
-	defer sourcefile.Close()
-
-	destfile, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-
-	defer destfile.Close()
-
-	_, err = io.Copy(destfile, sourcefile)
-	if err == nil {
-		sourceinfo, err := os.Stat(src)
-		if err != nil {
-			err = os.Chmod(dest, sourceinfo.Mode())
-		}
-
-	}
-	return nil
-}
-
 func IsSrcFolder(str string) bool {
 	fileRegexp := regexp.MustCompile("^[[:upper:]]{3}[0-9]{3}^C[0-9]{3}|_*[0-9]" + "[^100]")
 	return fileRegexp.MatchString(str)
@@ -274,9 +255,9 @@ func sumFiles(done <-chan struct{}, root string, FileList *list.List) (<-chan re
 			if err != nil {
 				return err
 			}
-			if !info.Mode().IsRegular() {
+/*			if !info.Mode().IsRegular() {
 				return nil
-			}
+			}*/
 			stat, err := os.Stat(path)
 		 		if err != nil {
 		 			return err
@@ -296,7 +277,6 @@ func sumFiles(done <-chan struct{}, root string, FileList *list.List) (<-chan re
 						}
 					}
 				}
-
 				Wg.Done()
 			}()
 			// Abort the walk if done is closed.
@@ -360,67 +340,15 @@ func CmdConf(c *cli.Context) {
 			FileList.PushBack(&FilesInfo{v.Reel, tc_to_frame(v.SourceIn, 24), tc_to_frame(v.SourceOut, 24)})
 		}
 	}
-	// var Wg sync.WaitGroup
-	// walkFn := func(path string, info os.FileInfo, err error) error {
-	// 	// if err != nil {
-	// 	// 	return err
-	// 	// }
-	// 	// if !info.Mode().IsRegular() {
-	// 	// 	return nil
-	// 	// }
-	// 	fmt.Println("coucou")
-	// 	Wg.Add(1)
-	// 	go func() error{ // HL
-	// 		//data, err := ioutil.ReadFile(path)
-	// 		stat, err := os.Stat(path)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		if stat.IsDir() && path != RootLocation && !Recurse {
-	// 			fmt.Println("skipping dir:", path)
-	// 			return filepath.SkipDir
-	// 		}
-	//
-	// 		if IsResolutionDir(path) == true {
-	// 			fmt.Println(path)
-	// 			name, frames := SplitRawFile(p.Base(path))
-	// 			if IsInList(FileList, name, frames) == true {
-	// 				fmt.Println(p.Base(path))
-	//
-	// 				cpCmd := exec.Command("cp", path, desteny)
-	// 				err = cpCmd.Start()
-	// 				if err != nil {
-	// 					fmt.Printf("Command finished with error: %v\n", err)
-	// 				}
-	// 				err = cpCmd.Wait()
-	// 				if err != nil {
-	// 					fmt.Printf("Command finished with error: %v\n", err)
-	// 				}
-	// 			}
-	// 		}
-	// 		select {
-	// 		case <-done: // HL
-	// 		}
-	// 		Wg.Done()
-	// 		return nil
-	// 	}()
-	// 	// Abort the walk if done is closed.
-	// 	select {
-	// 	case <-done: // HL
-	// 		return errors.New("walk canceled")
-	// 	default:
-	// 		return nil
-	// 	}
-	// }
-	//defer InOut.in.Close()
 
 	cr, _ := sumFiles(done, RootLocation, FileList) // HLdone
-	var wg sync.WaitGroup
+	 var wg sync.WaitGroup
 	for r := range cr { // HLrange
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			CopyFile(r.path, desteny+"/"+p.Base(r.path))
+			fmt.Println(r.path)
+			CopyFile(r.path, desteny+"/")
 		}()
 		// cpCmd := exec.Command("cp", r.path, desteny)
 		//  				err := cpCmd.Start()
@@ -434,7 +362,6 @@ func CmdConf(c *cli.Context) {
 		if r.err != nil {
 			return
 		}
-		fmt.Println(r.path)
 	}
-
+	wg.Wait()
 }
