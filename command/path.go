@@ -73,6 +73,9 @@ func GetDirRawFilenames(path string) []string {
 }
 
 func IsResolutionDir(str string) bool {
+    if res, _ := regexp.MatchString("DS_Store", str); res == true {
+        return false
+    }
 	fileRegexp := regexp.MustCompile("[[:digit:]]{4}x[[:digit:]]{4}")
 	return fileRegexp.MatchString(str)
 }

@@ -198,8 +198,10 @@ func SplitRawFile(raw string) (NameDir, frames string) {
 		return c == '.'
 	}
 	fields := strings.FieldsFunc(raw, f)
-	if len(fields) > 0 && IsResolutionDir(fields[0]) == false {
-		return fields[0], fields[1]
+	if len(fields) > 0 {
+        if IsResolutionDir(fields[0]) == false {
+		    return fields[0], fields[1]
+        }
 	}
 	return "", ""
 }
@@ -342,29 +344,30 @@ func CmdConf(c *cli.Context) {
 	}
 
 	cr, _ := sumFiles(done, RootLocation, FileList) // HLdone
-	 var wg sync.WaitGroup
+	//  var wg sync.WaitGroup
 	for r := range cr { // HLrange
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			fmt.Println(r.path)
-			CopyFile(r.path, desteny+"/")
-		}()
-		// cpCmd := exec.Command("cp", r.path, desteny)
-		//  				err := cpCmd.Start()
-		//  				if err != nil {
-		// 					fmt.Printf("Command finished with error: %v\n", err)
-		//  				}
-		//  				err = cpCmd.Wait()
-		//  				if err != nil {
-		//  					fmt.Printf("Command finished with error: %v\n", err)
-		//  				}
+		// wg.Add(1)
+		// go func() {
+		// 	defer wg.Done()
+		// 	fmt.Println(r.path)
+		// 	CopyFile(r.path, desteny+"/")
+		// }()
+		fmt.Println(r.path)
+		cpCmd := exec.Command("cp", "-rf", r.path, desteny)
+		 				err := cpCmd.Start()
+		 				if err != nil {
+							fmt.Printf("Command finished with error: %v\n", err)
+		 				}
+		 				err = cpCmd.Wait()
+		 				if err != nil {
+		 					fmt.Printf("Command finished with error: %v\n", err)
+		 				}
 		if r.err != nil {
 			return
 		}
 	}
-	go func() {
-		wg.Wait()
-	}()
+	// go func() {
+	// 	w	g.Wait()
+	// }()
 
 }
