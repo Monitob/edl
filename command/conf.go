@@ -145,7 +145,6 @@ func NewEntry(S []string, fps int) *Entry {
 }
 
 func Parse(r *InOut, fps int) []*Entry {
-
 	// Set the split function for the scanning operation.
 	scanLines := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		innerline, endline := regexp.MustCompile("\r([^\n])"), regexp.MustCompile("\r$")
@@ -261,7 +260,9 @@ func sumFiles(done <-chan struct{}, root string, FileList *list.List) (<-chan re
 				return nil
 			}*/
 			stat, err := os.Stat(path)
-		 		if err != nil {
+            fmt.Println(path)
+		 	if err != nil {
+                fmt.Println(err)
 		 			return err
 			}
 			if stat.IsDir() && path != root && !Recurse {
@@ -269,7 +270,7 @@ func sumFiles(done <-chan struct{}, root string, FileList *list.List) (<-chan re
 			 			return filepath.SkipDir
 		 		}
 			Wg.Add(1)
-			go func() { // HL
+			go func() {
 				if IsResolutionDir(path) == true {
 					name, frames := SplitRawFile(p.Base(path))
 					if IsInList(FileList, name, frames) == true {
@@ -343,31 +344,26 @@ func CmdConf(c *cli.Context) {
 		}
 	}
 
-	cr, _ := sumFiles(done, RootLocation, FileList) // HLdone
-	//  var wg sync.WaitGroup
-	for r := range cr { // HLrange
-		// wg.Add(1)
-		// go func() {
-		// 	defer wg.Done()
-		// 	fmt.Println(r.path)
-		// 	CopyFile(r.path, desteny+"/")
-		// }()
-		fmt.Println(r.path)
-		cpCmd := exec.Command("cp", "-rf", r.path, desteny)
-		 				err := cpCmd.Start()
+    subdir := GetDirSubDirRoot(RootLocation)
+		    fmt.Println(RootLocation)
+
+    for index, s :=  range subdir {
+        cr, _ := sumFiles(done, s, FileList)
+	    for r := range cr { // HLrange
+		    fmt.Println(r.path, index)
+	    	cpCmd := exec.Command("cp", "-rf", r.path, desteny)
+						err := cpCmd.Start()
 		 				if err != nil {
-							fmt.Printf("Command finished with error: %v\n", err)
+							fmt.Printf("Commad finished with error: %v\n", err)
 		 				}
 		 				err = cpCmd.Wait()
 		 				if err != nil {
 		 					fmt.Printf("Command finished with error: %v\n", err)
 		 				}
-		if r.err != nil {
-			return
-		}
-	}
-	// go func() {
-	// 	w	g.Wait()
-	// }()
+		    if r.err != nil {
+		    	return
+		    }
+	    }
+    }
 
 }
