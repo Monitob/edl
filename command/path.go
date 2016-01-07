@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+		pt "path"
 )
 
 const PathSeparator = string(filepath.Separator)
@@ -91,6 +92,18 @@ func GetDirSubDir(path string) []string {
 	for _, f := range F {
 		if f.IsDir() && IsResolutionDir(f.Name()) {
 			subdirs = append(subdirs, f.Name())
+		}
+	}
+	return subdirs
+}
+
+func GetDirSubDirRoot(path string) []string {
+	F, _ := ioutil.ReadDir(path)
+	subdirs, _ := make([]string, 0, len(F)), make([]string, 0, len(F))
+
+	for _, f := range F {
+		if f.IsDir()  {
+			subdirs = append(subdirs, pt.Clean(path + "/"  + f.Name()))
 		}
 	}
 	return subdirs
