@@ -73,6 +73,9 @@ func GetDirRawFilenames(path string) []string {
 }
 
 func IsResolutionDir(str string) bool {
+    if res, _ := regexp.MatchString("DS_Store", str); res == true {
+        return false
+    }
 	fileRegexp := regexp.MustCompile("[[:digit:]]{4}x[[:digit:]]{4}")
 	return fileRegexp.MatchString(str)
 }
@@ -150,9 +153,13 @@ func CreateDir(folder string) string {
 	}
 	dir := path + "/" + folder
 	fmt.Println(dir)
-	err = os.MkdirAll(dir, 0777)
-	if err != nil {
-		panic("MkdirAll error")
+	if _, err := os.Stat(dir); err == nil {
+		return dir + "/"
+	} else {
+		err = os.MkdirAll(dir, 0777)
+		if err != nil {
+			panic("MkdirAll error: Please verify your acces right")
+		}
 	}
 	return dir + "/"
 }
