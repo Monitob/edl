@@ -302,6 +302,37 @@ func sumFiles(done <-chan struct{}, root string, FileList *list.List) (<-chan re
 	return c, errc
 }
 
+func CheckArgs(edl string, c *cli.Context) bool {
+	if len(c.Args()) == 1 {
+		fmt.Printf("Incorrect usage\n")
+		return false
+	} else if _, err := os.Stat(edl); os.IsNotExist(err) {
+		fmt.Printf("File edl doesn't exist %v\n", edl)
+		return false
+	}
+	return true
+}
+
+func WalkSubir(subdir []string, desteny string, FileList *list.List, done <-chan struct{}){
+	for index, s :=  range subdir {
+			cr, _ := sumFiles(done, s, FileList)
+			for r := range cr { // HLrange
+				fmt.Println(r.path, index)
+				cpCmd := exec.Command("cp", "-rf", r.path, desteny)
+						err := cpCmd.Start()
+						if err != nil {
+							fmt.Printf("Commad finished with error: %v\n", err)
+						}
+						err = cpCmd.Wait()
+						if err != nil {
+							fmt.Printf("Command finished with error: %v\n", err)
+						}
+				if r.err != nil {
+					return
+				}
+			}
+		}
+}
 
 func CmdConf(c *cli.Context) {
 
@@ -309,28 +340,20 @@ func CmdConf(c *cli.Context) {
 	out := c.String("p")
 	RootLocation := c.String("d")
 	desteny := CreateDir(out)
-	//Recurse := true
 	done := make(chan struct{}) // HLdone
 	defer close(done)           // HLdone
 
-	if CheckFlags(c.String("e"), c.String("p"), c.String("d")) == false {
-		return
-	}
-	if len(c.Args()) == 1 {
-		fmt.Printf("Incorrect usage\n")
+	if CheckFlags(c.String("e"), c.String("p"), c.String("d")) == false && CheckArgs(in, c) == false{
 		return
 	}
 
 	InOut := NewInOut(in, out)
-
 	isEDLFile := func(path string) bool {
 		ext := strings.ToLower(filepath.Ext(in))
 		return ext == ".edl" || ext == ".txt"
 	}
 
-	F, G := GetInputOutput(in, out, isEDLFile, ".conf")
-	fmt.Printf("test: %v\n", F)
-	fmt.Printf("test: %v\n\n", G)
+	_, _ = GetInputOutput(in, out, isEDLFile, ".conf")
 	fmt.Println(desteny)
 
 	_ = InOut.Open()
@@ -340,30 +363,20 @@ func CmdConf(c *cli.Context) {
 	FileList := list.New()
 	for _, v := range Entry {
 		if IsSrcFolder(v.Reel) == true {
-			FileList.PushBack(&FilesInfo{v.Reel, tc_to_frame(v.SourceIn, 24), tc_to_frame(v.SourceOut, 24)})
+			FileList.PushBack(&FilesInfo{v.Reel, tc_to_frame(v.SourceIn, 24) - 5, tc_to_frame(v.SourceOut, 24) - 5})
 		}
 	}
-
-    subdir := GetDirSubDirRoot(RootLocation)
-		    fmt.Println(RootLocation)
-
-    for index, s :=  range subdir {
-        cr, _ := sumFiles(done, s, FileList)
-	    for r := range cr { // HLrange
-		    fmt.Println(r.path, index)
-	    	cpCmd := exec.Command("cp", "-rf", r.path, desteny)
-						err := cpCmd.Start()
-		 				if err != nil {
-							fmt.Printf("Commad finished with error: %v\n", err)
-		 				}
-		 				err = cpCmd.Wait()
-		 				if err != nil {
-		 					fmt.Printf("Command finished with error: %v\n", err)
-		 				}
-		    if r.err != nil {
-		    	return
-		    }
-	    }
-    }
-
+	// cmd := "find"
+	// cmdArgs := []string{RootLocation, "-type","d", "-name", "CAM_*"}
+	// ListDirCam, err  := exec.Command(cmd, cmdArgs...).Output()
+	// if err != nil {
+	// 	fmt.Fprintln(os.Stderr, "There was an error running find -type d -name CAM_* command: ", err)
+	// 	os.Exit(1)
+	// }
+	// for _, DirC := range  strings.Fields((string(ListDirCam))) {
+	// 	fmt.Println(DirC)
+	// 	subdir := GetDirSubDirRoot(string(DirC))
+		subdir := GetDirSubDirRoot(RootLocation)
+		WalkSubir(subdir, desteny, FileList, done)
+	// }
 }
