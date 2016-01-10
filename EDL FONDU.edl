@@ -1,0 +1,11 @@
+TITLE:   EDL FONDU
+FCM: NON-DROP FRAME
+000001  A048C007_150719_R6OT             V     C        01:51:29:08 01:51:42:22 01:09:56:06 01:10:09:20
+*EFF2_SBLEND
+*FROM CLIP NAME:  10/2-2 (A)*
+*LOC: 01:10:03:22 BLACK   CONFO : RESIZE ANIM +10% > +60% ET FONDU
+000002  A048C007_150719_R6OT             V     C        01:51:43:06 01:51:46:05 01:10:09:20 01:10:12:19
+*EFF2_SBLEND
+*FROM CLIP NAME:  10/2-2 (A)*
+*LOC: 01:10:11:01 BLACK   CONFO : RESIZE ANIM +60% > +70%
+

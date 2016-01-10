@@ -225,6 +225,7 @@ func IsSrcFolder(str string) bool {
 }
 
 func tc_to_frame(timecode string, frame_rate int) int {
+	fmt.Println(timecode, frame_rate, "tc to frame data")
 	hh, mm, ss, ff := GetHMS(timecode)
 	return ff + (ss+mm*60+hh*3600)*frame_rate
 }
@@ -250,37 +251,33 @@ func sumFiles(done <-chan struct{}, root string, FileList *list.List) (<-chan re
 	c := make(chan result)
 	errc := make(chan error, 1)
 	Recurse := true
-	go func() { // HL
+	go func() {
 		var Wg sync.WaitGroup
 		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-/*			if !info.Mode().IsRegular() {
-				return nil
-			}*/
-			stat, err := os.Stat(path)
-            fmt.Println(path)
-		 	if err != nil {
-                fmt.Println(err)
-		 			return err
-			}
-			if stat.IsDir() && path != root && !Recurse {
-			 			fmt.Println("skipping dir:", path)
-			 			return filepath.SkipDir
-		 		}
-			Wg.Add(1)
-			go func() {
-				if IsResolutionDir(path) == true {
-					name, frames := SplitRawFile(p.Base(path))
-					if IsInList(FileList, name, frames) == true {
-						select {
-						case c <- result{path, nil}: // HL
-						case <-done: // HL
-						}
+		if err != nil {
+			return err
+		}
+		stat, err := os.Stat(path)
+	 	if err != nil {
+        fmt.Println(err)
+	 			return err
+		}
+		if stat.IsDir() && path != root && !Recurse {
+		 			fmt.Println("skipping dir:", path)
+		 			return filepath.SkipDir
+	 		}
+		Wg.Add(1)
+		go func() {
+			if IsResolutionDir(path) == true {
+				name, frames := SplitRawFile(p.Base(path))
+				if IsInList(FileList, name, frames) == true {
+					select {
+					case c <- result{path, nil}: // HL
+					case <-done: // HL
 					}
 				}
-				Wg.Done()
+			}
+			Wg.Done()
 			}()
 			// Abort the walk if done is closed.
 			select {
@@ -338,19 +335,31 @@ func CmdConf(c *cli.Context) {
 	Entry := Parse(InOut, 24)
 
 	FileList := list.New()
+	fmt.Println(RootLocation)
 	for _, v := range Entry {
+		// fmt.Println("test:", v.SourceIn)
+		//fmt.Println(v.Reel)
 		if IsSrcFolder(v.Reel) == true {
 			FileList.PushBack(&FilesInfo{v.Reel, tc_to_frame(v.SourceIn, 24), tc_to_frame(v.SourceOut, 24)})
 		}
 	}
 
+// 160544
+// 160870
+// 160878
+// 160949
+		for e := FileList.Front(); e != nil; e = e.Next() {
+
+			fmt.Println(e.Value.(*FilesInfo).InitFrame)
+			fmt.Println(e.Value.(*FilesInfo).EndFrame)
+		}
     subdir := GetDirSubDirRoot(RootLocation)
 		    fmt.Println(RootLocation)
 
-    for index, s :=  range subdir {
+    for _, s :=  range subdir {
         cr, _ := sumFiles(done, s, FileList)
-	    for r := range cr { // HLrange
-		    fmt.Println(r.path, index)
+	    for r := range cr {
+		  //  fmt.Println(r.path, index)
 	    	cpCmd := exec.Command("cp", "-rf", r.path, desteny)
 						err := cpCmd.Start()
 		 				if err != nil {
