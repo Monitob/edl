@@ -225,6 +225,7 @@ func IsSrcFolder(str string) bool {
 }
 
 func tc_to_frame(timecode string, frame_rate int) int {
+	fmt.Println(timecode)
 	hh, mm, ss, ff := GetHMS(timecode)
 	return ff + (ss+mm*60+hh*3600)*frame_rate
 }
@@ -363,20 +364,22 @@ func CmdConf(c *cli.Context) {
 	FileList := list.New()
 	for _, v := range Entry {
 		if IsSrcFolder(v.Reel) == true {
-			FileList.PushBack(&FilesInfo{v.Reel, tc_to_frame(v.SourceIn, 24) - 5, tc_to_frame(v.SourceOut, 24) - 5})
+			FileList.PushBack(&FilesInfo{v.Reel, tc_to_frame(v.SourceIn, 24) - 10, tc_to_frame(v.SourceOut, 24) + 10})
 		}
 	}
-	// cmd := "find"
-	// cmdArgs := []string{RootLocation, "-type","d", "-name", "CAM_*"}
-	// ListDirCam, err  := exec.Command(cmd, cmdArgs...).Output()
-	// if err != nil {
-	// 	fmt.Fprintln(os.Stderr, "There was an error running find -type d -name CAM_* command: ", err)
-	// 	os.Exit(1)
-	// }
-	// for _, DirC := range  strings.Fields((string(ListDirCam))) {
-	// 	fmt.Println(DirC)
-	// 	subdir := GetDirSubDirRoot(string(DirC))
-		subdir := GetDirSubDirRoot(RootLocation)
+	cmd := "find"
+	cmdArgs := []string{RootLocation, "-type","d", "-name", "CAM_*"}
+	fmt.Println(cmdArgs)
+	ListDirCam, err  := exec.Command(cmd, cmdArgs...).Output()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "There was an error running find -type d -name CAM_* command: ", err)
+		os.Exit(1)
+	}
+	fmt.Println(ListDirCam)
+	for _, DirC := range  strings.Fields((string(ListDirCam))) {
+		fmt.Println(DirC)
+		subdir := GetDirSubDirRoot(string(DirC))
+	//	subdir := GetDirSubDirRoot(RootLocation)
 		WalkSubir(subdir, desteny, FileList, done)
-	// }
+	}
 }
